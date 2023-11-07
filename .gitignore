@@ -132,3 +132,7 @@ dist
 yarn.lock
 #docker data file
 data
+
+public/*.jpg
+public/*.png
+public/*.jpeg
