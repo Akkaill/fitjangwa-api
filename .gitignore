@@ -133,6 +133,6 @@ yarn.lock
 #docker data file
 data
 
-public/*.jpg
-public/*.png
-public/*.jpeg
+public/images/*.jpg
+public/images/*.png
+public/images/*.jpeg
