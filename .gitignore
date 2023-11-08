@@ -138,3 +138,5 @@ public/images/*.png
 public/images/*.jpeg
 public/images/*.webp
 
+prisma/migrations
+
