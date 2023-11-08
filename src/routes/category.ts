@@ -17,20 +17,15 @@ export default async function CategoryRoute(fastify: FastifyInstance) {
     reply.status(200).send(category);
   });
   fastify.get(
-    "/category/:id",
-    async (request: FastifyRequest<{ Params: { id: string } }>, reply) => {
-      const { id } = request.params;
+    "/category/:slug",
+    async (request: FastifyRequest<{ Params: { slug: string } }>, reply) => {
+      const { slug } = request.params;
       const category = await fastify.db.category.findFirstOrThrow({
         where: {
-          id,
+          slug,
         },
         include: {
-          product: {
-            select: {
-              id: true,
-              name: true,
-            },
-          },
+          product: true,
         },
       });
       reply.status(200).send(category);
@@ -38,10 +33,13 @@ export default async function CategoryRoute(fastify: FastifyInstance) {
   );
   fastify.post(
     "/category",
-    async (request: FastifyRequest<{ Body: { name: string } }>, reply) => {
-      const { name } = request.body;
+    async (
+      request: FastifyRequest<{ Body: { name: string; slug: string } }>,
+      reply
+    ) => {
+      const { name, slug } = request.body;
       const category = await fastify.db.category.create({
-        data: { name },
+        data: { name, slug },
       });
       reply.status(201).send(category);
     }

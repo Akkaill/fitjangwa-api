@@ -1,21 +1,47 @@
+import { Product } from "@prisma/client";
 import fastify, { FastifyInstance, FastifyRequest } from "fastify";
 export default async function ProductRoute(fastify: FastifyInstance) {
-  fastify.get("/products", async (request, reply) => {
-    const products = await fastify.db.product.findMany({
-      orderBy: {
-        createdAt: "desc",
-      },
-      include: {
-        category: {
-          select: {
-            id: true,
-            name: true,
+  fastify.get(
+    "/products",
+    async (
+      request: FastifyRequest<{ Querystring: { slug: string } }>,
+      reply
+    ) => {
+      const { slug } = request.query;
+      if (slug) {
+        const product = await fastify.db.product.findFirstOrThrow({
+          where: {
+            slug,
+          },
+          include: {
+            category: {
+              select: {
+                id: true,
+                name: true,
+                slug: true,
+              },
+            },
+          },
+        });
+        return reply.status(200).send(product);
+      }
+      const products = await fastify.db.product.findMany({
+        orderBy: {
+          createdAt: "desc",
+        },
+        include: {
+          category: {
+            select: {
+              id: true,
+              name: true,
+              slug: true,
+            },
           },
         },
-      },
-    });
-    reply.status(200).send(products);
-  });
+      });
+      return reply.status(200).send(products);
+    }
+  );
   fastify.get(
     "/products/:id",
     async (request: FastifyRequest<{ Params: { id: string } }>, reply) => {
@@ -25,7 +51,7 @@ export default async function ProductRoute(fastify: FastifyInstance) {
           id,
         },
       });
-      reply.status(200).send(product);
+      return reply.status(200).send(product);
     }
   );
   fastify.post(
@@ -33,24 +59,18 @@ export default async function ProductRoute(fastify: FastifyInstance) {
     async (
       request: FastifyRequest<{
         Body: {
-          name: string;
-          price: number;
-          desc: string;
-          image: string;
+          product_type: Product;
           categories_id?: string;
         };
       }>,
       reply
     ) => {
-      const { name, price, desc, image, categories_id } = request.body;
+      const { product_type, categories_id } = request.body;
       try {
         if (categories_id) {
           const product = await fastify.db.product.create({
             data: {
-              name,
-              price,
-              desc,
-              images: [image],
+              ...product_type,
               category: {
                 connect: {
                   id: categories_id,
@@ -70,16 +90,13 @@ export default async function ProductRoute(fastify: FastifyInstance) {
         }
         const product = await fastify.db.product.create({
           data: {
-            name,
-            price,
-            desc,
-            images: [image],
+            ...product_type,
           },
         });
 
         return reply.status(201).send(product);
       } catch (error) {
-        reply.status(500).send(error);
+        return reply.status(500).send(error);
       }
     }
   );
@@ -92,13 +109,14 @@ export default async function ProductRoute(fastify: FastifyInstance) {
           price: number;
           desc: string;
           image: string;
+          detail: string;
         };
         Params: { id: string };
       }>,
       reply
     ) => {
       const { id } = request.params;
-      const { name, price, desc, image } = request.body;
+      const { name, price, desc, image, detail } = request.body;
       const product = await fastify.db.product.update({
         where: {
           id,
@@ -108,9 +126,10 @@ export default async function ProductRoute(fastify: FastifyInstance) {
           price,
           desc,
           images: [image],
+          detail,
         },
       });
-      reply.status(200).send(product);
+      return reply.status(200).send(product);
     }
   );
   fastify.delete(
@@ -122,7 +141,7 @@ export default async function ProductRoute(fastify: FastifyInstance) {
           id,
         },
       });
-      reply.status(200).send({ message: "deleted" });
+      return reply.status(200).send({ message: "deleted" });
     }
   );
 }
