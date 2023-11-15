@@ -33,15 +33,36 @@ export default async function CategoryRoute(fastify: FastifyInstance) {
   );
   fastify.post(
     "/category",
-    async (
-      request: FastifyRequest<{ Body: { name: string; slug: string } }>,
-      reply
-    ) => {
-      const { name, slug } = request.body;
+    async (request: FastifyRequest<{ Body: { name: string } }>, reply) => {
+      const { name } = request.body;
       const category = await fastify.db.category.create({
-        data: { name, slug },
+        data: { name, slug: name.toLowerCase().replace(/ /g, "-") },
       });
       reply.status(201).send(category);
+    }
+  );
+
+  fastify.patch(
+    "/category/:id",
+    async (
+      requset: FastifyRequest<{
+        Body: { name: string; slug: string };
+        Params: { id: string };
+      }>,
+      reply
+    ) => {
+      const { id } = requset.params;
+      const { name, slug } = requset.body;
+      const category = await fastify.db.category.update({
+        where: {
+          id,
+        },
+        data: {
+          name,
+          slug,
+        },
+      });
+      reply.status(200).send(category);
     }
   );
 }
