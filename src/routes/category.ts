@@ -1,3 +1,4 @@
+import { SortProduct, sortProducts } from "@/libs/sortProducts";
 import fastify, { FastifyInstance, FastifyRequest } from "fastify";
 export default async function CategoryRoute(fastify: FastifyInstance) {
   fastify.get("/category", async (request, reply) => {
@@ -18,17 +19,29 @@ export default async function CategoryRoute(fastify: FastifyInstance) {
   });
   fastify.get(
     "/category/:slug",
-    async (request: FastifyRequest<{ Params: { slug: string } }>, reply) => {
+    async (
+      request: FastifyRequest<{
+        Params: { slug: string };
+        Querystring: { sort: SortProduct };
+      }>,
+      reply
+    ) => {
       const { slug } = request.params;
-      const category = await fastify.db.category.findFirstOrThrow({
+      const orderBy = sortProducts(request.query.sort);
+      const category = await fastify.db.category.findFirst({
         where: {
           slug,
         },
         include: {
-          product: true,
+          product: {
+            ...orderBy,
+          },
         },
       });
-      reply.status(200).send(category);
+      if (!category) {
+        return reply.status(404).send({ message: "Category not found" });
+      }
+      return reply.status(200).send(category);
     }
   );
   fastify.post(
